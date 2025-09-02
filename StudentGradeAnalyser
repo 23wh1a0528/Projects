@@ -1,0 +1,317 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.util.*;
+import java.util.List;
+
+public class GradeManagerWithPerformanceTracking {
+    private static final String FILE_NAME = "academic_data.dat";
+    private static Map<String, Map<String, Integer>> academicData = new HashMap<>();
+    private static Map<String, String> gradeCriteria = new TreeMap<>(Collections.reverseOrder());
+
+    public static void main(String[] args) {
+        loadData();
+        loadGradeCriteria();
+
+        JFrame frame = new JFrame("Student Grade Manager with Performance Tracking");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(800, 600);
+        frame.getContentPane().setBackground(Color.GRAY);
+
+        Box buttonBox = Box.createVerticalBox();
+        buttonBox.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JButton addButton = createButton("Add Subject and Score");
+        JButton editButton = createButton("Edit Subject Score");
+        JButton deleteButton = createButton("Delete Subject");
+        JButton viewButton = createButton("View All Data");
+        JButton calculateButton = createButton("Calculate Grades");
+        JButton customizeButton = createButton("Customize Grade Criteria");
+        JButton trackPerformanceButton = createButton("Track Performance");
+        JButton exitButton = createButton("Exit");
+
+        addButton.addActionListener(e -> addSubject());
+        editButton.addActionListener(e -> editSubject());
+        deleteButton.addActionListener(e -> deleteSubject());
+        viewButton.addActionListener(e -> viewData());
+        calculateButton.addActionListener(e -> calculateGrades());
+        customizeButton.addActionListener(e -> customizeCriteria());
+        trackPerformanceButton.addActionListener(e -> trackPerformance());
+        exitButton.addActionListener(e -> {
+            saveData();
+            saveGradeCriteria();
+            System.exit(0);
+        });
+
+        buttonBox.add(addButton);
+        buttonBox.add(Box.createVerticalStrut(10));
+        buttonBox.add(editButton);
+        buttonBox.add(Box.createVerticalStrut(10));
+        buttonBox.add(deleteButton);
+        buttonBox.add(Box.createVerticalStrut(10));
+        buttonBox.add(viewButton);
+        buttonBox.add(Box.createVerticalStrut(10));
+        buttonBox.add(calculateButton);
+        buttonBox.add(Box.createVerticalStrut(10));
+        buttonBox.add(customizeButton);
+        buttonBox.add(Box.createVerticalStrut(10));
+        buttonBox.add(trackPerformanceButton);
+        buttonBox.add(Box.createVerticalStrut(10));
+        buttonBox.add(exitButton);
+
+        frame.add(buttonBox, BorderLayout.WEST);
+        frame.setVisible(true);
+    }
+
+    private static JButton createButton(String text) {
+        JButton button = new JButton(text);
+        button.setAlignmentX(Component.LEFT_ALIGNMENT);
+        button.setPreferredSize(new Dimension(1800, 30));
+        return button;
+    }
+
+    private static void loadData() {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(FILE_NAME))) {
+            academicData = (Map<String, Map<String, Integer>>) ois.readObject();
+        } catch (FileNotFoundException e) {
+            System.out.println("No existing data file found. Starting fresh.");
+        } catch (IOException | ClassNotFoundException e) {
+            JOptionPane.showMessageDialog(null, "Error loading data: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private static void saveData() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
+            oos.writeObject(academicData);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Error saving data: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private static void loadGradeCriteria() {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream("grade_criteria.dat"))) {
+            gradeCriteria = (Map<String, String>) ois.readObject();
+        } catch (FileNotFoundException e) {
+            gradeCriteria.put("90", "A");
+            gradeCriteria.put("80", "B");
+            gradeCriteria.put("70", "C");
+            gradeCriteria.put("60", "D");
+            gradeCriteria.put("0", "F");
+        } catch (IOException | ClassNotFoundException e) {
+            JOptionPane.showMessageDialog(null, "Error loading grade criteria: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private static void saveGradeCriteria() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("grade_criteria.dat"))) {
+            oos.writeObject(gradeCriteria);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Error saving grade criteria: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private static void addSubject() {
+        String term = JOptionPane.showInputDialog("Enter the term/semester:");
+        if (term == null || term.isBlank()) return;
+
+        String subject = JOptionPane.showInputDialog("Enter the subject name:");
+        if (subject == null || subject.isBlank()) return;
+
+        String scoreStr = JOptionPane.showInputDialog("Enter the score/marks:");
+        try {
+            int score = Integer.parseInt(scoreStr);
+            academicData.putIfAbsent(term, new HashMap<>());
+            Map<String, Integer> termData = academicData.get(term);
+
+            if (termData.containsKey(subject)) {
+                JOptionPane.showMessageDialog(null, "Subject already exists. Use the edit option to modify.", "Warning", JOptionPane.WARNING_MESSAGE);
+            } else {
+                termData.put(subject, score);
+                JOptionPane.showMessageDialog(null, "Subject added successfully.");
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "Invalid score. Please enter a numeric value.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private static void editSubject() {
+        String term = JOptionPane.showInputDialog("Enter the term/semester:");
+        if (term == null || term.isBlank()) return;
+
+        if (!academicData.containsKey(term)) {
+            JOptionPane.showMessageDialog(null, "Term/semester not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String subject = JOptionPane.showInputDialog("Enter the subject name:");
+        if (subject == null || subject.isBlank()) return;
+
+        Map<String, Integer> termData = academicData.get(term);
+        if (!termData.containsKey(subject)) {
+            JOptionPane.showMessageDialog(null, "Subject not found in this term.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String scoreStr = JOptionPane.showInputDialog("Enter the new score/marks:");
+        try {
+            int newScore = Integer.parseInt(scoreStr);
+            termData.put(subject, newScore);
+            JOptionPane.showMessageDialog(null, "Subject score updated successfully.");
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "Invalid score. Please enter a numeric value.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private static void deleteSubject() {
+        String term = JOptionPane.showInputDialog("Enter the term/semester:");
+        if (term == null || term.isBlank()) return;
+
+        if (!academicData.containsKey(term)) {
+            JOptionPane.showMessageDialog(null, "Term/semester not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String subject = JOptionPane.showInputDialog("Enter the subject name:");
+        if (subject == null || subject.isBlank()) return;
+
+        Map<String, Integer> termData = academicData.get(term);
+        if (termData.remove(subject) != null) {
+            JOptionPane.showMessageDialog(null, "Subject deleted successfully.");
+            if (termData.isEmpty()) {
+                academicData.remove(term);
+            }
+        } else {
+            JOptionPane.showMessageDialog(null, "Subject not found in this term.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private static void viewData() {
+        if (academicData.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "No data available.");
+        } else {
+            StringBuilder data = new StringBuilder("Academic Data:\n");
+            for (String term : academicData.keySet()) {
+                data.append("\nTerm: ").append(term).append("\n");
+                Map<String, Integer> termData = academicData.get(term);
+                for (Map.Entry<String, Integer> entry : termData.entrySet()) {
+                    data.append("  Subject: ").append(entry.getKey()).append(", Score: ").append(entry.getValue()).append("\n");
+                }
+            }
+            JTextArea textArea = new JTextArea(data.toString());
+            textArea.setEditable(false);
+            JScrollPane scrollPane = new JScrollPane(textArea);
+            scrollPane.setPreferredSize(new Dimension(400, 300));
+            JOptionPane.showMessageDialog(null, scrollPane, "View Data", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private static void calculateGrades() {
+        if (academicData.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "No data available to calculate grades.");
+            return;
+        }
+
+        StringBuilder grades = new StringBuilder("Grades:\n");
+        for (String term : academicData.keySet()) {
+            grades.append("\nTerm: ").append(term).append("\n");
+            Map<String, Integer> termData = academicData.get(term);
+            for (Map.Entry<String, Integer> entry : termData.entrySet()) {
+                String grade = getGrade(entry.getValue());
+                grades.append("  Subject: ").append(entry.getKey()).append(", Score: ").append(entry.getValue()).append(", Grade: ").append(grade).append("\n");
+            }
+        }
+
+        JTextArea textArea = new JTextArea(grades.toString());
+        textArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new Dimension(400, 300));
+        JOptionPane.showMessageDialog(null, scrollPane, "Calculate Grades", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private static String getGrade(int score) {
+        for (String threshold : gradeCriteria.keySet()) {
+            if (score >= Integer.parseInt(threshold)) {
+                return gradeCriteria.get(threshold);
+            }
+        }
+        return "No Grade";
+    }
+
+    private static void customizeCriteria() {
+        gradeCriteria.clear();
+        while (true) {
+            String threshold = JOptionPane.showInputDialog("Enter grade threshold (or press Cancel to finish):");
+            if (threshold == null || threshold.isBlank()) break;
+
+            String grade = JOptionPane.showInputDialog("Enter the grade for threshold " + threshold + ":");
+            if (grade == null || grade.isBlank()) break;
+
+            gradeCriteria.put(threshold, grade);
+        }
+        JOptionPane.showMessageDialog(null, "Grade criteria updated successfully.");
+    }
+
+    private static void trackPerformance() {
+        if (academicData.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "No data available to track performance.");
+            return;
+        }
+
+        StringBuilder performanceReport = new StringBuilder("Performance Trends:\n");
+
+        for (String subject : getSubjects()) {
+            List<Integer> scores = getSubjectScores(subject);
+            if (scores.size() < 2) {
+                continue;
+            }
+            String trend = analyzeTrend(scores);
+            performanceReport.append("Subject: ").append(subject).append(", Trend: ").append(trend).append("\n");
+        }
+
+        JTextArea textArea = new JTextArea(performanceReport.toString());
+        textArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new Dimension(400, 300));
+        JOptionPane.showMessageDialog(null, scrollPane, "Performance Trends", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private static List<String> getSubjects() {
+        Set<String> subjects = new HashSet<>();
+        for (Map<String, Integer> termData : academicData.values()) {
+            subjects.addAll(termData.keySet());
+        }
+        return new ArrayList<>(subjects);
+    }
+
+    private static List<Integer> getSubjectScores(String subject) {
+        List<Integer> scores = new ArrayList<>();
+        for (Map<String, Integer> termData : academicData.values()) {
+            if (termData.containsKey(subject)) {
+                scores.add(termData.get(subject));
+            }
+        }
+        return scores;
+    }
+
+    private static String analyzeTrend(List<Integer> scores) {
+        boolean isImproving = true;
+        boolean isDeclining = true;
+
+        for (int i = 1; i < scores.size(); i++) {
+            if (scores.get(i) > scores.get(i - 1)) {
+                isDeclining = false;
+            } else if (scores.get(i) < scores.get(i - 1)) {
+                isImproving = false;
+            }
+        }
+
+        if (isImproving) {
+            return "Consistent Improvement";
+        } else if (isDeclining) {
+            return "Consistent Decline";
+        } else {
+            return "Fluctuating";
+        }
+    }
+}
