@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LRU Cache Simulation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>LRU Cache Simulation</h2>
+
+        <div class="form-group">
+            <label>Cache Size</label>
+            <input type="number" id="cacheSize" value="3">
+        </div>
+
+        <div class="form-group">
+            <label>Page Number</label>
+            <input type="number" id="page">
+        </div>
+
+        <div class="button-group">
+            <button onclick="put()">Put</button>
+            <button onclick="get()">Get</button>
+        </div>
+
+        <p id="result"></p>
+
+        <h3>Cache (Most Recent → Least Recent)</h3>
+        <div id="cache" class="cache-container"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
