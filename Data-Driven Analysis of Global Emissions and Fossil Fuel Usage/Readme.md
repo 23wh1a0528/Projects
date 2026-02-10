@@ -1,12 +1,12 @@
 # CO₂ Emission Data Analysis Project
 
-## 📌 Overview
+## Overview
 
 This project focuses on analyzing global **CO₂ emissions** to understand patterns, trends, and factors contributing to climate change. The analysis uses real-world emission datasets and applies data cleaning, visualization, and statistical techniques to uncover insights.
 
 ---
 
-## 🎯 Objectives
+## Objectives
 
 * Identify global and regional CO₂ emission trends
 * Compare emissions across countries and industries
@@ -16,7 +16,7 @@ This project focuses on analyzing global **CO₂ emissions** to understand patte
 
 ---
 
-## 🛠️ Technologies Used
+## Technologies Used
 
 * **Python**
 
@@ -40,4 +40,3 @@ This project focuses on analyzing global **CO₂ emissions** to understand patte
 ## Acknowledgements
 Data sources:
 * Kaggle CO₂ datasets
-
